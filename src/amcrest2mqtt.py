@@ -68,8 +68,8 @@ def mqtt_publish(topic, payload, exit_on_error=True, json=False):
 
 def on_mqtt_disconnect(client, userdata, rc):
     if rc != 0:
-        log(f"Unexpected MQTT disconnection", level="ERROR")
-        exit_gracefully(rc, skip_mqtt=True)
+        log(f"Unexpected MQTT disconnection, attempting reconnection", level="ERROR")
+        client.reconnect()
 
 def exit_gracefully(rc, skip_mqtt=False):
     global topics, mqtt_client
@@ -193,7 +193,6 @@ topics = {
 mqtt_client = mqtt.Client(
     client_id=f"amcrest2mqtt_{serial_number}", clean_session=False
 )
-mqtt_client.reconnect_delay_set(min_delay=1, max_delay=10)
 mqtt_client.on_disconnect = on_mqtt_disconnect
 mqtt_client.will_set(topics["status"], payload="offline", qos=mqtt_qos, retain=True)
 if mqtt_tls_enabled:
