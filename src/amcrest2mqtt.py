@@ -21,6 +21,7 @@ storage_poll_interval = int(os.getenv("STORAGE_POLL_INTERVAL") or 3600)
 
 mqtt_host = os.getenv("MQTT_HOST") or "localhost"
 mqtt_qos = int(os.getenv("MQTT_QOS") or 0)
+mqtt_keepalive = int(os.getenv("MQTT_KEEPALIVE") or 60)
 mqtt_port = int(os.getenv("MQTT_PORT") or 1883)
 mqtt_username = os.getenv("MQTT_USERNAME")
 mqtt_password = os.getenv("MQTT_PASSWORD")  # can be None
@@ -192,6 +193,7 @@ topics = {
 mqtt_client = mqtt.Client(
     client_id=f"amcrest2mqtt_{serial_number}", clean_session=False
 )
+mqtt_client.reconnect_delay_set(min_delay=1, max_delay=10)
 mqtt_client.on_disconnect = on_mqtt_disconnect
 mqtt_client.will_set(topics["status"], payload="offline", qos=mqtt_qos, retain=True)
 if mqtt_tls_enabled:
@@ -216,7 +218,7 @@ else:
     mqtt_client.username_pw_set(mqtt_username, password=mqtt_password)
 
 try:
-    mqtt_client.connect(mqtt_host, port=mqtt_port)
+    mqtt_client.connect(mqtt_host, port=mqtt_port, keepalive=mqtt_keepalive)
     mqtt_client.loop_start()
 except ConnectionError as error:
     log(f"Could not connect to MQTT server: {error}", level="ERROR")
